@@ -10,7 +10,6 @@ config = require("../../config");
 each = preludeLs.each;
 log = require("id-debug");
 debug = log.debug;
-debug('raptor', raptor);
 ExpressServer = (function(superclass){
   var prototype = extend$((import$(ExpressServer, superclass).displayName = 'ExpressServer', ExpressServer), superclass).prototype, constructor = ExpressServer;
   function ExpressServer(options){
@@ -28,19 +27,14 @@ ExpressServer = (function(superclass){
     });
   };
   prototype._importFixtures = function(cb){
-    var serviceDescriptionFixtures, serializer, parser;
+    var serviceDescriptionFixtures;
     serviceDescriptionFixtures = require("../multilevel/fixtures/service-description");
-    debug('raptor', raptor);
-    serializer = raptor.createSerializer("json");
-    debug('serializer', serializer);
-    serializer.setBaseURI("A");
-    parser = raptor.createParser("n3");
-    debug('parser', parser);
-    parser.setBaseURI("A");
-    parser.pipe(serializer).pipe(process.stdout);
-    parser.write(new Buffer(serviceDescriptionFixtures));
-    parser.end();
-    cb();
+    this.dnodeRemote.n3.put(serviceDescriptionFixtures, function(e){
+      if (e) {
+        return cb(e);
+      }
+      cb();
+    });
   };
   prototype.start = function(){
     var this$ = this;
@@ -73,10 +67,9 @@ ExpressServer = (function(superclass){
   });
   prototype.routes = function(options){
     var this$ = this;
-    debug("routes");
-    this.app.get("/query/:s?/:p?/:o?", function(req, res, next){
+    this.app.get("/query", function(req, res, next){
       var ref$, s, p, o, options;
-      ref$ = req.params, s = ref$.s, p = ref$.p, o = ref$.o;
+      ref$ = req.query, s = ref$.s, p = ref$.p, o = ref$.o;
       options = {};
       if (s && s !== "_") {
         options.subject = s;
@@ -91,7 +84,6 @@ ExpressServer = (function(superclass){
         if (e) {
           return next(e);
         }
-        log(this$.notFound);
         this$.sendTriples(res, triples);
       });
     });

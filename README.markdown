@@ -40,18 +40,10 @@ server.
 
 The current routes are:
 
-    GET /query/:s?/:p?/:o?
+    GET /query?s=Subject&p=Predicate&o=Object
 
       Queries the levelgraph for triples matching the query.
 
-      Example:
-
-      /query/Subject/Predicate/Object
-      /query/Subject/Predicate
-      /query/Subject
-      /query/_/Predicate
-      /query/_/_/Object
-
     GET /sparql
 
-      This is suppose to be the SPARQL endpoint.
+      This is supposed to be the SPARQL endpoint.

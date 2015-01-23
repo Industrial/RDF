@@ -19,8 +19,6 @@ log = require "id-debug"
   debug
 } = log
 
-debug \raptor, raptor
-
 class ExpressServer extends id-server.http.express.ExpressServer
   (options) !->
     super options
@@ -36,62 +34,21 @@ class ExpressServer extends id-server.http.express.ExpressServer
   _import-fixtures: (cb) !->
     service-description-fixtures = require "../multilevel/fixtures/service-description"
 
-    #debug 0
-    #descriptors = require "../multilevel/fixtures/descriptors"
-    #debug 1, descriptors.length
-    #locations = require "../multilevel/fixtures/locations"
-    #debug 2, locations.length
-    #organizations = require "../multilevel/fixtures/organizations"
-    #debug 3, organizations.length
-    #people = require "../multilevel/fixtures/people"
-    #debug 4, people.length
+    #serializer = raptor.create-serializer "json"
+    #serializer.set-base-URI "A"
 
-    #debug "loading descriptors"
-    #e <-! @dnode-remote.n3.put descriptors.to-string!
-    #return cb e if e
+    #parser = raptor.create-parser "n3"
+    #parser.set-base-URI "A"
 
-    #debug "loading locations"
-    #e <-! @dnode-remote.n3.put locations.to-string!
-    #return cb e if e
+    #parser
+    #  .pipe serializer
+    #  .pipe process.stdout
 
-    #debug "loading organizations"
-    #e <-! @dnode-remote.n3.put organizations.to-string!
-    #return cb e if e
+    #parser.write new Buffer service-description-fixtures
+    #parser.end()
 
-    #debug "loading people"
-    #e <-! @dnode-remote.n3.put people.to-string!
-    #return cb e if e
-
-    debug \raptor, raptor
-
-    serializer = raptor.create-serializer "json"
-
-    debug \serializer, serializer
-
-    serializer
-      .set-base-URI "A"
-
-    parser = raptor.create-parser "n3"
-
-    debug \parser, parser
-
-    parser
-      .set-base-URI "A"
-
-    parser
-      .pipe serializer
-      .pipe process.stdout
-
-    parser.write new Buffer service-description-fixtures
-    parser.end()
-
-    #parser.parse-buffer new Buffer service-description-fixtures
-
-    #debug "loading service description"
-    #e <-! @dnode-remote.n3.put service-description-fixtures
-    #return cb e if e
-
-    #debug "loading done"
+    e <-! @dnode-remote.n3.put service-description-fixtures
+    return cb e if e
 
     cb!
 
@@ -123,21 +80,16 @@ class ExpressServer extends id-server.http.express.ExpressServer
     n3-writer.end!
 
   routes: (options) !->
-    debug "routes"
-
-    @app.get "/query/:s?/:p?/:o?", (req, res, next) !~>
-      { s, p, o } = req.params
+    @app.get "/query", (req, res, next) !~>
+      { s, p, o } = req.query
 
       options = {}
-
       options.subject = s if s and s isnt "_"
       options.predicate = p if p and p isnt "_"
       options.object = o if o and o isnt "_"
 
       e, triples <~! @dnode-remote.get options
       return next e if e
-
-      log @not-found
 
       @send-triples res, triples
 
