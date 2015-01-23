@@ -11,14 +11,14 @@ aswell so the IO throughput could be great!
 ### Raptor RDF library
 Raptor is a library that can convert a lot of formats.
 
-  grddl             atom
-  guess             json
-  json              json-triples
-  ntriples          nquads
-  rdfa          to  ntriples
-  rdfxml            rdfxml
-  rss-tag-soup      rdfxml-abbrev
-  trig              rdfxml-xmp
-  turtle            turtle
-                    rss-1.0
-                    dot
+    grddl             atom
+    guess             json
+    json              json-triples
+    ntriples          nquads
+    rdfa          to  ntriples
+    rdfxml            rdfxml
+    rss-tag-soup      rdfxml-abbrev
+    trig              rdfxml-xmp
+    turtle            turtle
+                      rss-1.0
+                      dot
