@@ -1,6 +1,8 @@
 Basic tools for Node.js for working with RDF.
 
-Eventually I want to implement a SPARQL endpoint for Levelgraph.
+Eventually I want to implement a
+[SPARQL](http://www.w3.org/2009/sparql/wiki/Main_Page) endpoint for
+[levelgraph](https://github.com/mcollina/levelgraph).
 
 ### Raptor RDF library
 Raptor is a library that can convert a lot of formats.
@@ -23,8 +25,11 @@ Levelgraph is an implementation of a triple store. It has a streaming API
 aswell so the IO throughput could be great!
 
 ### Levelgraph RPC server
-I tried Multilevel with Sublevel but couldn't get the RPC to work. Since
-id-server supports a RPC server (dnode) anyway, I chose to expose the
+I tried [multilevel](https://github.com/juliangruber/multilevel) with
+[level-sublevel](https://github.com/dominictarr/level-sublevel) but couldn't
+get the RPC of the levelgraph server to work in the sublevel. Since
+[id-server](https://github.com/Industrial/id-server) supports a RPC server
+([dnode](https://github.com/substack/dnode)) anyway, I chose to expose the
 LevelGraph API over Dnode.
 
 ### ExpressServer
