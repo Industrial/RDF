@@ -11,7 +11,9 @@
   "dependencies": {
     "async": "^0.9.0",
     "dnode": "^1.2.0",
+    "id-builder": "0.0.0",
     "id-debug": "^1.2.0",
+    "id-server": "^0.2.6",
     "jade": "^1.9.1",
     "level": "^0.18.0",
     "level-sublevel": "^6.4.2",
