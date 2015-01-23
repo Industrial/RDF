@@ -6,6 +6,8 @@ require! <[
   prelude-ls
 ]>
 
+raptor = require "node_raptor"
+
 config = require "../../config"
 
 {
@@ -16,6 +18,8 @@ log = require "id-debug"
 {
   debug
 } = log
+
+debug \raptor, raptor
 
 class ExpressServer extends id-server.http.express.ExpressServer
   (options) !->
@@ -58,11 +62,36 @@ class ExpressServer extends id-server.http.express.ExpressServer
     #e <-! @dnode-remote.n3.put people.to-string!
     #return cb e if e
 
-    debug "loading service description"
-    e <-! @dnode-remote.n3.put service-description-fixtures
-    return cb e if e
+    debug \raptor, raptor
 
-    debug "loading done"
+    serializer = raptor.create-serializer "json"
+
+    debug \serializer, serializer
+
+    serializer
+      .set-base-URI "A"
+
+    parser = raptor.create-parser "n3"
+
+    debug \parser, parser
+
+    parser
+      .set-base-URI "A"
+
+    parser
+      .pipe serializer
+      .pipe process.stdout
+
+    parser.write new Buffer service-description-fixtures
+    parser.end()
+
+    #parser.parse-buffer new Buffer service-description-fixtures
+
+    #debug "loading service description"
+    #e <-! @dnode-remote.n3.put service-description-fixtures
+    #return cb e if e
+
+    #debug "loading done"
 
     cb!
 
