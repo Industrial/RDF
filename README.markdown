@@ -33,8 +33,10 @@ get the RPC of the levelgraph server to work in the sublevel. Since
 LevelGraph API over Dnode.
 
 ### ExpressServer
-ExpressServer also builds on id-server to provide an out-of-the-box express
-configuration and the same interface to start/stop the server.
+ExpressServer also builds on
+[id-server](https://github.com/Industrial/id-server) to provide an
+out-of-the-box express configuration and the same interface to start/stop the
+server.
 
 The current routes are:
 
