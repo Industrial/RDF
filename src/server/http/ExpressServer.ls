@@ -1,9 +1,11 @@
 require! <[
   id-server
   dnode
+  path
   async
   n3
   prelude-ls
+  stream
 ]>
 
 raptor = require "node_raptor"
@@ -79,26 +81,39 @@ class ExpressServer extends id-server.http.express.ExpressServer
 
     n3-writer.end!
 
+  send-format: (format, base-uri, req, res, next, triples) !-->
+    # Somehow n3.Writer turtle-parser doesnt work.
+    passthrough = new stream.PassThrough
+
+    # Levelgraph Objects to N-Triples
+    triples-writer = n3.Writer passthrough, do
+      format: "N-Triples"
+
+    # N-Triples to Memory
+    turtle-parser = raptor.create-parser "ntriples"
+    turtle-parser.set-base-URI base-uri
+
+    # Memory to Format
+    format-serializer = raptor.create-serializer format
+    format-serializer.set-base-URI base-uri
+
+    passthrough
+      .pipe turtle-parser
+      .pipe format-serializer
+      .pipe res
+
+    res.status 200
+
+    each (-> triples-writer.add-triple it), triples
+    triples-writer.end!
+
+  require-route: (p) ->
+    require (path.resolve __dirname, p) .bind @
+
   routes: (options) !->
-    @app.get "/query", (req, res, next) !~>
-      { s, p, o } = req.query
-
-      options = {}
-      options.subject = s if s and s isnt "_"
-      options.predicate = p if p and p isnt "_"
-      options.object = o if o and o isnt "_"
-
-      e, triples <~! @dnode-remote.get options
-      return next e if e
-
-      @send-triples res, triples
-
-    @app.get "/sparql", (req, res, next) !~>
-      e, triples <~! @dnode-remote.get {}
-      return next e if e
-
-      @send-triples res, triples
-
+    @app.get "/query",                  @require-route "./server/routes/get-query"
+    @app.get "/api/rdf/2015/01/query",  @require-route "./server/routes/api/rdf/2015/01/get-query"
+    @app.get "/api/rdf/2015/01/sparql", @require-route "./server/routes/api/rdf/2015/01/get-sparql"
     @
 
 module.exports = ExpressServer
