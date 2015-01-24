@@ -1,17 +1,12 @@
-#require! <[
-#]>
+levelgraph-array-to-ntriples-stream = require "../../../../../../../../lib/format/conversion/levelgraph-array-to-ntriples-stream"
 
 log = require "id-debug"
 {
   debug
 } = log
 
-module.exports = (req, res, next) !->
+module.exports = (req, res, next) ->
   { s, p, o } = req.query
-
-  output-format = req.query.output-format or \turtle
-
-  debug "output-format", output-format
 
   options = {}
   options.subject = s if s and s isnt "_"
@@ -21,4 +16,10 @@ module.exports = (req, res, next) !->
   e, triples <~! @dnode-remote.get options
   return next e if e
 
-  @send-format output-format, "http://localhost:8000/api/rdf/2015/01", req, res, next, triples
+  ntriples-stream = levelgraph-array-to-ntriples-stream triples
+
+  res.status 200
+
+  ntriples-stream
+    .pipe res.serializer
+    .pipe res

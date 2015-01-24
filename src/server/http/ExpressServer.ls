@@ -12,6 +12,9 @@ raptor = require "node_raptor"
 
 config = require "../../config"
 
+accept-type = require "../../lib/http/server/middleware/accept-type"
+content-type = require "../../lib/http/server/middleware/content-type"
+
 {
   each
 } = prelude-ls
@@ -22,6 +25,8 @@ log = require "id-debug"
 } = log
 
 class ExpressServer extends id-server.http.express.ExpressServer
+  # List of languages we can parse.
+
   (options) !->
     super options
 
@@ -55,6 +60,8 @@ class ExpressServer extends id-server.http.express.ExpressServer
     cb!
 
   start: !->
+    debug "start"
+
     @dnode-client = dnode.connect config.server.multilevel.levelgraph-rpc.port
 
     @dnode-client.on \remote, (remote) !~>
@@ -71,49 +78,58 @@ class ExpressServer extends id-server.http.express.ExpressServer
 
     @
 
-  send-triples: (res, triples) !-->
-    res.header "Content-Type", "text/turtle"
-    res.status 200
-
-    n3-writer = n3.Writer res
-
-    each n3-writer~add-triple, triples
-
-    n3-writer.end!
-
-  send-format: (format, base-uri, req, res, next, triples) !-->
-    # Somehow n3.Writer turtle-parser doesnt work.
-    passthrough = new stream.PassThrough
-
-    # Levelgraph Objects to N-Triples
-    triples-writer = n3.Writer passthrough, do
-      format: "N-Triples"
-
-    # N-Triples to Memory
-    turtle-parser = raptor.create-parser "ntriples"
-    turtle-parser.set-base-URI base-uri
-
-    # Memory to Format
-    format-serializer = raptor.create-serializer format
-    format-serializer.set-base-URI base-uri
-
-    passthrough
-      .pipe turtle-parser
-      .pipe format-serializer
-      .pipe res
-
-    res.status 200
-
-    each (-> triples-writer.add-triple it), triples
-    triples-writer.end!
-
   require-route: (p) ->
     require (path.resolve __dirname, p) .bind @
 
   routes: (options) !->
+    @app.use content-type
+    @app.use accept-type
+
     @app.get "/query",                  @require-route "./server/routes/get-query"
     @app.get "/api/rdf/2015/01/query",  @require-route "./server/routes/api/rdf/2015/01/get-query"
     @app.get "/api/rdf/2015/01/sparql", @require-route "./server/routes/api/rdf/2015/01/get-sparql"
+
     @
 
 module.exports = ExpressServer
+
+/*
+  formats:
+    # TODO: Learn how to decide the input language filter.
+    input:
+      # TODO: Get the appropriate types
+      \grddl: !->
+      \guess: !->
+      \json: !->
+      \ntriples: !->
+      \rdfa: !->
+      \rdfxml: !->
+      \rss-tag-soup: !->
+      \trig: !->
+      \turtle: !->
+
+    # TODO: Decide the output language filter based on the HTTP Accept header
+    #       on the request.
+    output:
+      # TODO: What to return in case of HTML? A table of triples?
+      \text/html: (req, res, next) !->
+
+      # TODO: How to decide between XML forms?
+      \application/xml: (req, res, next) !->
+      #\atom: (req, res, next) !->
+      #\rdfxml: !->
+      #\rdfxml-abbrev: !->
+      #\rdfxml-xmp: !->
+      #\rss-1.0: !->
+
+      # TODO: How to decide between JSON forms?
+      \application/json: (req, res, next) !->
+      #\json: !->
+      #\json-triples: !->
+
+      # TODO: Get the appropriate types
+      \nquads: !->
+      \ntriples: !->
+      \turtle: !->
+      \dot: !->
+*/
