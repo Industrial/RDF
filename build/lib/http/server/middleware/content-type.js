@@ -9,7 +9,7 @@ module.exports = function(req, res, next){
     next(new Error("No header `Content-Type` found."));
   }
   if (!in$(type, parsers)) {
-    next(new Error("Value `" + type + "` not supported for header `Content-Type`."));
+    next(new Error("Value `" + type + "` not supported for header `Content-Type`. Was expecting one of `" + parsers.join(", ") + "`."));
   }
   req.parser = raptor.createParser(type);
   req.parser.setBaseURI("base-uri");

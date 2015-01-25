@@ -1,6 +1,7 @@
 require! <[
   id-server
   level
+  level-sublevel
   levelgraph
   levelgraph-jsonld
   levelgraph-n3

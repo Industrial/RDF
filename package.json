@@ -27,6 +27,7 @@
     "npm": "^2.2.0",
     "prelude-ls": "^1.1.1",
     "raptor": "git://github.com/0xfeedface/node_raptor.git",
-    "rdf-interfaces": "^0.1.0"
+    "rdf-interfaces": "^0.1.0",
+    "sparqljs": "^1.0.4"
   }
 }

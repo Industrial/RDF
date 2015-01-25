@@ -12,6 +12,7 @@ export levelgraph-config = config.server.multilevel.levelgraph
 export levelgraph-server = new LevelgraphServer config.server.multilevel.levelgraph
 
 export levelgraph-rpc-config = config.server.multilevel.levelgraph-rpc
+
 levelgraph-rpc-config.interface =
   approximate-size: levelgraph-server.multilevel-database~approximate-size
   del-stream: levelgraph-server.multilevel-database~del-stream

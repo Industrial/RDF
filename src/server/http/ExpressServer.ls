@@ -14,6 +14,7 @@ config = require "../../config"
 
 accept-type = require "../../lib/http/server/middleware/accept-type"
 content-type = require "../../lib/http/server/middleware/content-type"
+levelgraph-array-to-ntriples-stream = require "../../lib/format/conversion/levelgraph-array-to-ntriples-stream"
 
 {
   each
@@ -41,18 +42,7 @@ class ExpressServer extends id-server.http.express.ExpressServer
   _import-fixtures: (cb) !->
     service-description-fixtures = require "../multilevel/fixtures/service-description"
 
-    #serializer = raptor.create-serializer "json"
-    #serializer.set-base-URI "A"
-
-    #parser = raptor.create-parser "n3"
-    #parser.set-base-URI "A"
-
-    #parser
-    #  .pipe serializer
-    #  .pipe process.stdout
-
-    #parser.write new Buffer service-description-fixtures
-    #parser.end()
+    debug "fixtures", service-description-fixtures
 
     e <-! @dnode-remote.n3.put service-description-fixtures
     return cb e if e
@@ -60,8 +50,6 @@ class ExpressServer extends id-server.http.express.ExpressServer
     cb!
 
   start: !->
-    debug "start"
-
     @dnode-client = dnode.connect config.server.multilevel.levelgraph-rpc.port
 
     @dnode-client.on \remote, (remote) !~>
@@ -81,55 +69,87 @@ class ExpressServer extends id-server.http.express.ExpressServer
   require-route: (p) ->
     require (path.resolve __dirname, p) .bind @
 
+  api-prefix: "/api/rdf"
+
   routes: (options) !->
     @app.use content-type
     @app.use accept-type
 
+    # Get everything.
+    @app.get "#{@api-prefix}", (req, res, next) !~>
+      e, triples <~! @dnode-remote.get {}
+      return next e if e
+
+      ntriples-stream = levelgraph-array-to-ntriples-stream triples
+
+      res.status 200
+
+      ntriples-stream
+        .pipe res.serializer
+        .pipe res
+
+    # Create a subject. Create many triples.
+    @app.post "#{@api-prefix}", (req, res, next) !~>
+      #debug "req", req
+
+      debug "body", typeof req.body, req.body.length, req.body
+
+      #e, triples <~! @dnode-remote.get {}
+      #return next e if e
+
+      #ntriples-stream = levelgraph-array-to-ntriples-stream triples
+
+      #res.status 200
+
+      #ntriples-stream
+      #  .pipe res.serializer
+      #  .pipe res
+
+    # Get a subject.
+    @app.get "#{@api-prefix}/:subject", (req, res, next) !~>
+      e, triples <~! @dnode-remote.get subject: req.params.subject
+      return next e if e
+
+      ntriples-stream = levelgraph-array-to-ntriples-stream triples
+
+      res.status 200
+
+      ntriples-stream
+        .pipe res.serializer
+        .pipe res
+
+    # Update a subject.
+    @app.put "#{@api-prefix}/:subject", (req, res, next) !~>
+
+    # Delete a subject.
+    @app.delete "#{@api-prefix}/:subject", (req, res, next) !~>
+
     @app.get "/query",                  @require-route "./server/routes/get-query"
-    @app.get "/api/rdf/2015/01/query",  @require-route "./server/routes/api/rdf/2015/01/get-query"
+    @app.get "query",  @require-route "./server/routes/api/rdf/2015/01/get-query"
     @app.get "/api/rdf/2015/01/sparql", @require-route "./server/routes/api/rdf/2015/01/get-sparql"
 
     @
 
 module.exports = ExpressServer
 
-/*
-  formats:
-    # TODO: Learn how to decide the input language filter.
-    input:
-      # TODO: Get the appropriate types
-      \grddl: !->
-      \guess: !->
-      \json: !->
-      \ntriples: !->
-      \rdfa: !->
-      \rdfxml: !->
-      \rss-tag-soup: !->
-      \trig: !->
-      \turtle: !->
-
-    # TODO: Decide the output language filter based on the HTTP Accept header
-    #       on the request.
-    output:
-      # TODO: What to return in case of HTML? A table of triples?
-      \text/html: (req, res, next) !->
-
-      # TODO: How to decide between XML forms?
-      \application/xml: (req, res, next) !->
-      #\atom: (req, res, next) !->
-      #\rdfxml: !->
-      #\rdfxml-abbrev: !->
-      #\rdfxml-xmp: !->
-      #\rss-1.0: !->
-
-      # TODO: How to decide between JSON forms?
-      \application/json: (req, res, next) !->
-      #\json: !->
-      #\json-triples: !->
-
-      # TODO: Get the appropriate types
-      \nquads: !->
-      \ntriples: !->
-      \turtle: !->
-      \dot: !->
-*/
+# With a HTTP REST API for RDF I would want to be able to:
+# - Create one or many triples.
+# - Update one or many triples.
+# - Delete one or many triples.
+#
+# 1) Does this mean my URL Scheme ends up looking like:
+#
+# GET      /api/rdf            Get everything (Don't support this?)
+# POST     /api/rdf            Create a subject.
+# GET      /api/rdf/:subject   Get a subject.
+# PUT      /api/rdf/:subject   Update a subject.
+# DELETE   /api/rdf/:subject   Delete a subject.
+#
+# 2) Given the URL scheme, does that mean a PUT of a subject includes
+#    sending it the complete new state of all triples with this subject?
+#
+# 3) Where do people start out? GET /api/rdf ?
+#
+# Other questions:
+# - What do I do with HEAD requests? What do I return from them and does
+#   the context matter (i.e. graph or subject or?)
